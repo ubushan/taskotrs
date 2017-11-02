@@ -2,12 +2,12 @@
 import telebot
 from datetime import datetime
 from conf import base, mailsender, config
-# from flask import Flask, request
-# import os
+from flask import Flask, request
+import os
 
 
 bot = telebot.TeleBot(config.properties.TELEGRAM_BOT_TOKEN)
-# server = Flask(__name__)
+server = Flask(__name__)
 
 # Chat ID
 def getCID(message):
@@ -215,19 +215,17 @@ def getlog(message):
         bot.send_message(cid, text, parse_mode="Markdown")
 
 
-# @server.route("/bot", methods=['POST'])
-# def getMessage():
-#     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-#     return "!", 200
-#
-#
-# @server.route("/")
-# def webhook():
-#     bot.remove_webhook()
-#     bot.set_webhook(url=config.properties.APP_URL)
-#     return "!", 200
-#
-# server.run(host="0.0.0.0", port=os.environ.get('PORT', 5000))
-# server = Flask(__name__)
+@server.route("/bot", methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
 
-bot.polling()
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url=config.properties.APP_URL)
+    return "!", 200
+
+server.run(host="0.0.0.0", port=os.environ.get('PORT', 5000))
+server = Flask(__name__)
