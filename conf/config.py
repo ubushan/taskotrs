@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 class properties:
@@ -14,4 +13,4 @@ class properties:
 
     # PATH TO PROJECT
     PATH = "./"
-    APP_URL = "https://taskotrs.herokuapp.com"
+    APP_URL = "https://taskotrs.herokuapp.com/bot"
