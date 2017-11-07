@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import telebot
+from telebot import types
 from datetime import datetime
 from conf import base, mailsender, config
 from flask import Flask, request
@@ -67,25 +68,61 @@ def start(message):
 
 
 @bot.message_handler(commands=['mail'])
-def echo(message):
+def subj(message):
+    cid = getCID(message)
+    msg = bot.send_message(cid, "Введите тему письма")
+    bot.register_next_step_handler(msg, body)
+
+letter = {}
+
+
+def body(message):
+    cid = getCID(message)
+    letter['subject'] = message.text
+    msg = bot.send_message(cid, "Введите тело письма")
+    bot.register_next_step_handler(msg, send)
+
+
+@bot.inline_handler(lambda query: len(query.query) > 0)
+def send(message):
+    letter['body'] = message.text
+
+    subject = letter['subject']
+    text = letter['body']
     cid = getCID(message)
     check = base.findUid(message.from_user.id)
     if message.from_user.id == check:
-        mail = message.text[6:]
-        if bool(mail) == True:
+        if bool(text) or bool(subject) == True:
             log(message)
-            bot.send_message(cid, mailsender.send(message.from_user.id, message.from_user.first_name, mail), parse_mode="Markdown")
-        else:
-            text = "ℹ️ Чтобы отправить письмо, используй команду /mail в формате:" \
-                   "\n\n`/mail <ваш текст письма>`"
-            log(message)
-            bot.send_message(cid, text, parse_mode="Markdown")
+            keyboard = types.InlineKeyboardMarkup()
+            callback_button = types.InlineKeyboardButton(text="Отправить", callback_data='test')
+            keyboard.add(callback_button)
+            bot.send_message(cid, "*Письмо сформированно!*\n\nТема письма: `%s`\nТекст: `%s`" % (subject, text),
+                             parse_mode="Markdown", reply_markup=keyboard)
     else:
         text = "*Прости, но я тебя не знаю. Я работаю только с доверенными пользователями!*\n\n" \
                "ℹ️ Чтобы начать пользоваться ботом, отправь свой *UserID* администратору.\n\n" \
                "Твой *UserID:* `" + str(message.from_user.id) + "`"
         log(message)
         bot.send_message(cid, text, parse_mode="Markdown")
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    if call.message:
+        if call.data == "test":
+            test = mailsender.send(getUID(call), letter['subject'], letter['body'])
+            if test[0] == 1:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1],
+                                      parse_mode="Markdown")
+            elif test[0] == 0:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1],
+                                      parse_mode="Markdown")
+            elif test[0] == -1:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1],
+                                      parse_mode="Markdown")
+
+            letter.clear()
 
 
 @bot.message_handler(commands=['whoami'])

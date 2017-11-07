@@ -4,7 +4,6 @@ class properties:
     # MAIL_CONFIG
     FROM = "otrsbot@ya.ru"
     FROM_NAME = "OTRS TaskBot"
-    SUBJECT = "Письмо от "
     OTRS_MAIL = "otrs.task@guardant.ru"
 
     # TOKENS
