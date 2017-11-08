@@ -67,10 +67,11 @@ def start(message):
         bot.send_message(message.chat.id, text)
 
 
+@bot.inline_handler(lambda query: len(query.query) > 0)
 @bot.message_handler(commands=['mail'])
-def subj(message):
-    cid = getCID(message)
-    msg = bot.send_message(cid, "Введите тему письма")
+def subj(query):
+    cid = getCID(query)
+    msg = bot.send_message(cid, "🖌 Введите *тему* письма", parse_mode="Markdown")
     bot.register_next_step_handler(msg, body)
 
 letter = {}
@@ -79,25 +80,25 @@ letter = {}
 def body(message):
     cid = getCID(message)
     letter['subject'] = message.text
-    msg = bot.send_message(cid, "Введите тело письма")
+    msg = bot.send_message(cid, "📝 Введите *текст* письма", parse_mode="Markdown")
     bot.register_next_step_handler(msg, send)
 
 
 @bot.inline_handler(lambda query: len(query.query) > 0)
 def send(message):
+    cid = getCID(message)
     letter['body'] = message.text
-
     subject = letter['subject']
     text = letter['body']
-    cid = getCID(message)
     check = base.findUid(message.from_user.id)
     if message.from_user.id == check:
         if bool(text) or bool(subject) == True:
             log(message)
             keyboard = types.InlineKeyboardMarkup()
-            callback_button = types.InlineKeyboardButton(text="Отправить", callback_data='test')
-            keyboard.add(callback_button)
-            bot.send_message(cid, "*Письмо сформированно!*\n\nТема письма: `%s`\nТекст: `%s`" % (subject, text),
+            callback_button = types.InlineKeyboardButton(text="📩 Отправить", callback_data='send')
+            callback_button2 = types.InlineKeyboardButton(text="❌ Отмена", callback_data='cancel')
+            keyboard.add(callback_button, callback_button2)
+            bot.send_message(cid, "*Письмо сформированно!*\n\nТема: `%s`\nТекст: `%s`" % (subject, text),
                              parse_mode="Markdown", reply_markup=keyboard)
     else:
         text = "*Прости, но я тебя не знаю. Я работаю только с доверенными пользователями!*\n\n" \
@@ -110,19 +111,21 @@ def send(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
-        if call.data == "test":
+        if call.data == "send":
             test = mailsender.send(getUID(call), letter['subject'], letter['body'])
             if test[0] == 1:
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1],
-                                      parse_mode="Markdown")
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1], parse_mode="Markdown")
             elif test[0] == 0:
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1],
-                                      parse_mode="Markdown")
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1], parse_mode="Markdown")
             elif test[0] == -1:
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1],
-                                      parse_mode="Markdown")
-
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=test[1], parse_mode="Markdown")
             letter.clear()
+
+        if call.data == "cancel":
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                      text="❌ *Отправка отменена!*\n\n"
+                                           "ℹ Для смены адреса получателя используй команду в формате:\n"
+                                           "`/change <e-mail address>`", parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['whoami'])
