@@ -13,4 +13,4 @@ class properties:
     # PATH TO PROJECT
     PATH = "./"
     APP_URL = "https://taskotrs.herokuapp.com/bot"
-    acc = "kl\testaccforcheck"
+    ACC = "kl\testaccforcheck"
